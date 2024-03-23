@@ -1,0 +1,52 @@
+{
+	"host": "localhost",
+	"port": "8080",
+	"services": [
+		{
+			"id": "localhost:8000SOMETHING",
+			"url": "localhost:8000",
+			"alive": true,
+			"healthcheck": {
+				"delay": 5,
+				"endpoint": "/",
+				"duration": 0.245,
+				"got_error": false
+			},
+			"secret_key": "SOMETHING",
+			"timeout": 3,
+			"endpoints": {
+				"/": {
+					"allowed_methods": [
+						"GET"
+					],
+					"allowed_hosts": [
+						"localhost"
+					]
+				}
+			}
+		},
+		{
+			"id": "localhost:7000SOMETHING",
+			"url": "localhost:7000",
+			"alive": true,
+			"healthcheck": {
+				"delay": 5,
+				"endpoint": "/",
+				"duration": 0.237,
+				"got_error": false
+			},
+			"secret_key": "SOMETHING",
+			"timeout": 3,
+			"endpoints": {
+				"/": {
+					"allowed_methods": [
+						"GET"
+					],
+					"allowed_hosts": [
+						"localhost"
+					]
+				}
+			}
+		}
+	]
+}
