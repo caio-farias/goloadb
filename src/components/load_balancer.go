@@ -6,7 +6,6 @@ import (
 	"math/rand/v2"
 	"os"
 	"server/src"
-	"server/src/components/subcomponents"
 	"server/src/utils"
 	"sync"
 	"time"
@@ -19,11 +18,11 @@ const (
 )
 
 type LoadBalancer struct {
-	FilePath        string                   `json:"-"`
-	Host            string                   `json:"host"`
-	Port            string                   `json:"port"`
-	Services        []subcomponents.HostInfo `json:"services"`
-	mutexSync       sync.Mutex               `json:"-"`
+	FilePath        string     `json:"-"`
+	Host            string     `json:"host"`
+	Port            string     `json:"port"`
+	Services        []HostInfo `json:"services"`
+	mutexSync       sync.Mutex `json:"-"`
 	targetHost      string
 	enableBalancing bool
 }
@@ -37,6 +36,8 @@ func NewLoadBalancer(path string) *LoadBalancer {
 	var lb LoadBalancer
 	json.Unmarshal(file_bytes, &lb)
 	lb.FilePath = path
+	os.Setenv("host", lb.Host)
+	os.Setenv("host", lb.Port)
 	return &lb
 }
 
@@ -63,6 +64,11 @@ func (lb *LoadBalancer) SyncFile() error {
 func (lb *LoadBalancer) FindService() {
 	idx := rand.IntN(2)
 	lb.targetHost = lb.Services[idx].Url
+}
+
+func (lb *LoadBalancer) GetDiscoveryInfo() string {
+	lb_bytes, _ := lb.to_json()
+	return string(lb_bytes)
 }
 
 func (lb *LoadBalancer) to_json() ([]byte, error) {
@@ -96,8 +102,8 @@ func (lb *LoadBalancer) enableServiceDiscovery() {
 	}
 
 	for _, host := range lb.Services {
-		service_url := host.Url
 		delay := host.GetDelay()
+		service_url := host.Url
 		hc_endpoint := host.HealthCheck.Endpoint
 		header := &Header{
 			Method:        "GET",
@@ -107,17 +113,16 @@ func (lb *LoadBalancer) enableServiceDiscovery() {
 		go func() {
 			for {
 				start := time.Now()
-				request, err := NewRequest(service_url, header)
-				if err != nil {
-					log.Println(err)
-					time.Sleep(delay)
-					continue
+				ctx := &Context{
+					Url:      service_url,
+					Endpoint: hc_endpoint,
+					Header:   header,
 				}
-				_, err = request.Send("")
-
+				_, err := Ping(ctx)
 				end := float64(time.Since(start).Microseconds()) * .001
 				if err != nil {
 					lb.updateHealthCheck(host.Id, false, utils.ToFixed(end))
+					log.Println(err)
 					time.Sleep(delay)
 					continue
 				}

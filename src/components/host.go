@@ -1,4 +1,4 @@
-package subcomponents
+package components
 
 import (
 	"server/src/utils"

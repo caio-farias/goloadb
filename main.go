@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"server/src"
 	"server/src/components"
+	"server/src/handlers"
 	"sync"
 	"syscall"
 )
@@ -26,7 +27,7 @@ func handleExit(callback func()) {
 }
 
 func main() {
-	lb := components.NewLoadBalancer(src.CONFIG_FILE_PATH)
+	lb := components.NewLoadBalancer(src.CONFIG_FILE_PATH).EnableLoadBalancing()
 
 	defer handleExit(func() {
 		lb.SyncFile()
@@ -34,20 +35,7 @@ func main() {
 
 	midreg := components.NewMiddlewareRegistry()
 
-	midreg.Add("/", func(url string, header *components.Header, body string) (string, error) {
-		request, err := components.NewRequest(url, header)
-		if err != nil {
-			log.Println(err)
-			return "", err
-		}
-		res, err := request.Await()
-		if err != nil {
-			log.Println(err)
-			return "", err
-		}
-
-		return res, nil
-	})
+	midreg.AddHandler("/", handlers.RequestService)
 
 	var wg sync.WaitGroup
 	midreg.Exec(lb, &wg)
