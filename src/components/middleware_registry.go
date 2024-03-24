@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	EXEC_CYCLE_SLEEP_DURATION = 500
+	EXEC_CYCLE_SLEEP_DURATION = 1
 )
 
 type Handler = func(ctx *Context) error
@@ -41,6 +41,7 @@ func (mr *MiddlewareRegistry) Exec(lb *LoadBalancer, wg *sync.WaitGroup) {
 			HeaderContent: map[string]string{
 				utils.UserAgenteKey:  utils.Fake_User_Agent,
 				utils.AcceptKey:      utils.AcceptAll,
+				utils.ConnectionKey:  utils.KeepAlive,
 				utils.ContentTypeKey: utils.ApplicationJson,
 			},
 		}
@@ -68,12 +69,13 @@ func (mr *MiddlewareRegistry) Exec(lb *LoadBalancer, wg *sync.WaitGroup) {
 			if err != nil {
 				conn.Close()
 				time.Sleep(EXEC_CYCLE_SLEEP_DURATION * time.Millisecond)
+				return
 			}
 
 			lb.FindService()
 			ctx := &Context{
 				Url:           lb.targetHost,
-				Header:        NewDefaultHeader(received_request.GetPath(), received_request.GetMethod()),
+				Header:        received_request.Header,
 				Body:          received_request.Body,
 				DiscoveryInfo: lb.GetDiscoveryInfo(),
 			}

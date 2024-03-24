@@ -1,6 +1,8 @@
 package components
 
 import (
+	"errors"
+	"io"
 	"log"
 	"net"
 	"server/src"
@@ -24,7 +26,7 @@ type Request struct {
 func NewRequest(ctx *Context) (*Request, error) {
 	conn, err := net.Dial("tcp", ctx.Url)
 	if err != nil {
-		log.Printf("Error trying to connect with %s", ctx.Url)
+		log.Printf("Error trying to connect with %s \n\n", ctx.Url)
 		return nil, err
 	}
 
@@ -42,8 +44,8 @@ func NewRequestFromListener(conn *net.Conn) (*Request, error) {
 	readb := make([]byte, src.BUFFER_LENGTH)
 
 	_, read_err := (*conn).Read(readb[0:])
-	if read_err != nil {
-		log.Print("Failed to read from connection:", read_err)
+	if read_err != nil && !errors.Is(io.EOF, read_err) {
+		log.Print("Failed to read from connection. ", read_err)
 		return nil, read_err
 	}
 
@@ -67,12 +69,13 @@ func NewRequestFromListener(conn *net.Conn) (*Request, error) {
 }
 
 func (req *Request) AwaitResponse() (string, error) {
+	(*req.conn).SetDeadline(time.Now().Add(utils.GetTimeInSeconds(10)))
 	log.Printf("Awaiting response from client -> %s \n", (*req.conn).RemoteAddr().String())
 	readb := make([]byte, src.BUFFER_LENGTH)
 	_, read_err := (*req.conn).Read(readb[0:])
 
-	if read_err != nil {
-		log.Print("Failed to read from connection:", read_err)
+	if read_err != nil && !errors.Is(io.EOF, read_err) {
+		log.Print("Failed to read from connection. ", read_err)
 		return "", read_err
 	}
 
@@ -118,7 +121,6 @@ func (req *Request) SendNow() (int, error) {
 func Ping(ctx *Context) (int, error) {
 	req, err := NewRequest(ctx)
 	if err != nil {
-		log.Println(err)
 		return 0, err
 	}
 

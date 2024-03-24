@@ -122,7 +122,6 @@ func (lb *LoadBalancer) enableServiceDiscovery() {
 				end := float64(time.Since(start).Microseconds()) * .001
 				if err != nil {
 					lb.updateHealthCheck(host.Id, false, utils.ToFixed(end))
-					log.Println(err)
 					time.Sleep(delay)
 					continue
 				}
