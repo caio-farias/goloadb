@@ -32,6 +32,7 @@ func (mr *MiddlewareRegistry) AddHandler(path string, handler Handler) {
 }
 
 func (mr *MiddlewareRegistry) Exec(lb *LoadBalancer, wg *sync.WaitGroup) {
+	defer wg.Done()
 	mr.lb = lb
 
 	mr.AddHandler("/info", func(ctx *Context) error {
@@ -49,7 +50,6 @@ func (mr *MiddlewareRegistry) Exec(lb *LoadBalancer, wg *sync.WaitGroup) {
 		return nil
 	})
 
-	wg.Add(1)
 	go func() {
 		port := lb.Port
 		listener, err := net.Listen("tcp", ":"+port)
@@ -61,7 +61,7 @@ func (mr *MiddlewareRegistry) Exec(lb *LoadBalancer, wg *sync.WaitGroup) {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				log.Printf("Error trying to receive next call on connection.")
+				log.Printf("Error trying to receive next connection from listener.")
 				continue
 			}
 
@@ -81,20 +81,7 @@ func (mr *MiddlewareRegistry) Exec(lb *LoadBalancer, wg *sync.WaitGroup) {
 			}
 
 			handler := mr.handler_registry[received_request.GetPath()]
-
-			if handler != nil {
-				err = handler(ctx)
-				if err != nil {
-					ctx.Header = &Header{
-						ProtocolVersion: DefaultHttp,
-						Status:          "500",
-						HeaderContent: map[string]string{
-							utils.ContentTypeKey: utils.TextHtml,
-						},
-					}
-					ctx.Body = "<center><h1>ERROR</h1></center>"
-				}
-			} else {
+			if handler == nil {
 				ctx.Header = &Header{
 					ProtocolVersion: DefaultHttp,
 					Status:          "404",
@@ -103,6 +90,20 @@ func (mr *MiddlewareRegistry) Exec(lb *LoadBalancer, wg *sync.WaitGroup) {
 					},
 				}
 				ctx.Body = "<center><h1>404 NO FOUND</h1></center>"
+			} else {
+				func(ctx *Context, handler Handler) {
+					err = handler(ctx)
+					if err != nil {
+						ctx.Header = &Header{
+							ProtocolVersion: DefaultHttp,
+							Status:          "500",
+							HeaderContent: map[string]string{
+								utils.ContentTypeKey: utils.TextHtml,
+							},
+						}
+						ctx.Body = "<center><h1>ERROR</h1></center>"
+					}
+				}(ctx, handler)
 			}
 
 			received_request.Body = ctx.Body
@@ -110,7 +111,7 @@ func (mr *MiddlewareRegistry) Exec(lb *LoadBalancer, wg *sync.WaitGroup) {
 			received_request.SendNow()
 
 			(*received_request.conn).Close()
-			time.Sleep(EXEC_CYCLE_SLEEP_DURATION * time.Millisecond)
+			// time.Sleep(EXEC_CYCLE_SLEEP_DURATION * time.Millisecond)
 		}
 	}()
 }

@@ -5,12 +5,12 @@
 		{
 			"id": "localhost:8000SOMETHING",
 			"url": "localhost:8000",
-			"alive": true,
+			"alive": false,
 			"healthcheck": {
 				"delay": 5,
 				"endpoint": "/",
-				"duration": 0.245,
-				"got_error": false
+				"duration": 0.334,
+				"got_error": true
 			},
 			"secret_key": "SOMETHING",
 			"timeout": 3,
@@ -28,12 +28,12 @@
 		{
 			"id": "localhost:7000SOMETHING",
 			"url": "localhost:7000",
-			"alive": true,
+			"alive": false,
 			"healthcheck": {
 				"delay": 5,
 				"endpoint": "/",
-				"duration": 0.237,
-				"got_error": false
+				"duration": 0.387,
+				"got_error": true
 			},
 			"secret_key": "SOMETHING",
 			"timeout": 3,

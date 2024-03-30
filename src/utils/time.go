@@ -10,13 +10,18 @@ const (
 	BR_Location = "America/Sao_Paulo"
 )
 
-func getTime(location_name string, format string) string {
-	location, _ := time.LoadLocation(location_name)
-	return time.Now().In(location).Format(format)
+func getTime(location_name string, format string) (string, error) {
+	location, error := time.LoadLocation(location_name)
+	if error != nil {
+		return "", error
+	}
+
+	return time.Now().In(location).Format(format), nil
 }
 
 func GetTimeHere() string {
-	return getTime(BR_Location, RFC1123)
+	time, _ := getTime(BR_Location, RFC1123)
+	return time
 }
 
 func round(num float64) int {

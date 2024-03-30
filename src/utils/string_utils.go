@@ -11,7 +11,11 @@ func SanitizeString(str string) string {
 }
 
 func Unpack(s []string, vars ...*string) {
+	len := len(vars)
 	for i, str := range s {
+		if i >= len {
+			break
+		}
 		*vars[i] = str
 	}
 }

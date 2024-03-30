@@ -3,7 +3,7 @@ package components
 import (
 	"encoding/json"
 	"log"
-	"math/rand/v2"
+	"math/rand"
 	"os"
 	"server/src"
 	"server/src/utils"
@@ -18,11 +18,11 @@ const (
 )
 
 type LoadBalancer struct {
-	FilePath        string     `json:"-"`
-	Host            string     `json:"host"`
-	Port            string     `json:"port"`
-	Services        []HostInfo `json:"services"`
-	mutexSync       sync.Mutex `json:"-"`
+	FilePath        string       `json:"-"`
+	Host            string       `json:"host"`
+	Port            string       `json:"port"`
+	Services        []HostInfo   `json:"services"`
+	mutexSync       sync.RWMutex `json:"-"`
 	targetHost      string
 	enableBalancing bool
 }
@@ -48,6 +48,8 @@ func (lb *LoadBalancer) EnableLoadBalancing() *LoadBalancer {
 }
 
 func (lb *LoadBalancer) SyncFile() error {
+	(*lb).mutexSync.Lock()
+	defer (*lb).mutexSync.Unlock()
 	lb_bytes, _ := lb.to_json()
 
 	err := os.WriteFile(lb.FilePath, lb_bytes, 0644)
@@ -58,21 +60,28 @@ func (lb *LoadBalancer) SyncFile() error {
 	if src.VERBOSE {
 		log.Println("Saving data on file... ", string(lb_bytes))
 	}
+
 	return nil
 }
 
 func (lb *LoadBalancer) FindService() {
-	idx := rand.IntN(2)
+	(*lb).mutexSync.RLock()
+	defer (*lb).mutexSync.RUnlock()
+	idx := rand.Intn(2)
 	lb.targetHost = lb.Services[idx].Url
 }
 
 func (lb *LoadBalancer) GetDiscoveryInfo() string {
+	(*lb).mutexSync.RLock()
+	defer (*lb).mutexSync.RUnlock()
 	lb_bytes, _ := lb.to_json()
 	return string(lb_bytes)
 }
 
 func (lb *LoadBalancer) to_json() ([]byte, error) {
-	lb_bytes, err := json.MarshalIndent(lb, "", "	")
+	(*lb).mutexSync.RLock()
+	defer (*lb).mutexSync.RUnlock()
+	lb_bytes, err := json.MarshalIndent(&lb, "", "	")
 	if err != nil {
 		log.Println("Could not parse LoadBalancer to JSON.", err)
 		return nil, err
@@ -110,7 +119,8 @@ func (lb *LoadBalancer) enableServiceDiscovery() {
 			Path:          hc_endpoint,
 			HeaderContent: header_content,
 		}
-		go func() {
+
+		go func(host HostInfo) {
 			for {
 				start := time.Now()
 				ctx := &Context{
@@ -129,6 +139,6 @@ func (lb *LoadBalancer) enableServiceDiscovery() {
 				lb.updateHealthCheck(host.Id, true, utils.ToFixed(end))
 				time.Sleep(delay)
 			}
-		}()
+		}(host)
 	}
 }

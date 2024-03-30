@@ -17,6 +17,7 @@ func handleExit(callback func()) {
 	should_exit := make(chan bool, 1)
 
 	go func() {
+		log.Println("Waiting exit signal.")
 		exitChan := <-sig
 		log.Printf("\n######### Signal %s received. Aborting now...\n", exitChan)
 		callback()
@@ -27,17 +28,19 @@ func handleExit(callback func()) {
 }
 
 func main() {
-	lb := components.NewLoadBalancer(src.CONFIG_FILE_PATH).EnableLoadBalancing()
+	lb := components.NewLoadBalancer(src.CONFIG_FILE_PATH)
+	lb.EnableLoadBalancing()
 
 	defer handleExit(func() {
 		lb.SyncFile()
 	})
 
 	midreg := components.NewMiddlewareRegistry()
-
 	midreg.AddHandler("/", handlers.RequestService)
 
 	var wg sync.WaitGroup
+	wg.Add(1)
 	midreg.Exec(lb, &wg)
 	wg.Wait()
+
 }
