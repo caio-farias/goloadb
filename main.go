@@ -31,16 +31,15 @@ func main() {
 	lb := components.NewLoadBalancer(src.CONFIG_FILE_PATH)
 	lb.EnableLoadBalancing()
 
+	midreg := components.NewMiddlewareRegistry()
+	midreg.AddHandler("/", handlers.RequestService)
+
 	defer handleExit(func() {
 		lb.SyncFile()
 	})
-
-	midreg := components.NewMiddlewareRegistry()
-	midreg.AddHandler("/", handlers.RequestService)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	midreg.Exec(lb, &wg)
 	wg.Wait()
-
 }

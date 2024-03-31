@@ -48,11 +48,10 @@ func (lb *LoadBalancer) EnableLoadBalancing() *LoadBalancer {
 }
 
 func (lb *LoadBalancer) SyncFile() error {
-	(*lb).mutexSync.Lock()
-	defer (*lb).mutexSync.Unlock()
 	lb_bytes, _ := lb.to_json()
-
+	(*lb).mutexSync.Lock()
 	err := os.WriteFile(lb.FilePath, lb_bytes, 0644)
+	defer (*lb).mutexSync.Unlock()
 	if err != nil {
 		log.Println("Could not write in config.json: ", err)
 		return err

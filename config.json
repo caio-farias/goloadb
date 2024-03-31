@@ -9,7 +9,7 @@
 			"healthcheck": {
 				"delay": 5,
 				"endpoint": "/",
-				"duration": 0.334,
+				"duration": 0.283,
 				"got_error": true
 			},
 			"secret_key": "SOMETHING",
@@ -32,7 +32,7 @@
 			"healthcheck": {
 				"delay": 5,
 				"endpoint": "/",
-				"duration": 0.387,
+				"duration": 0.416,
 				"got_error": true
 			},
 			"secret_key": "SOMETHING",
