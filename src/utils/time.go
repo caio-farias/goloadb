@@ -41,3 +41,11 @@ func GetTimeInMilliseconds(mills int) time.Duration {
 	return time.Duration(mills) * time.Millisecond
 
 }
+
+func GetTimeDiffInMicrosec(start time.Time) float64 {
+	return ToFixed(float64(time.Since(start).Microseconds()))
+}
+
+func GetTimeDiffInMillisec(start time.Time) float64 {
+	return ToFixed(float64(time.Since(start).Milliseconds()))
+}
