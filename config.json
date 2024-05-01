@@ -1,10 +1,10 @@
 {
-	"host": "localhost",
+	"host": "127.0.0.1",
 	"port": "8080",
 	"services": [
 		{
-			"id": "localhost:8000SOMETHING",
-			"url": "localhost:8000",
+			"id": "127.0.0.1:8000",
+			"url": "http://127.0.0.1:8000",
 			"alive": false,
 			"healthcheck": {
 				"delay": 5,
@@ -26,8 +26,8 @@
 			}
 		},
 		{
-			"id": "localhost:7000SOMETHING",
-			"url": "localhost:7000",
+			"id": "127.0.0.1:7000",
+			"url": "http://127.0.0.1:7000",
 			"alive": false,
 			"healthcheck": {
 				"delay": 5,
